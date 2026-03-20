@@ -1,7 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF
 import docx
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 import io
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -104,6 +107,79 @@ async def scan_resume(
         "common_keywords": sorted(common_keywords)[:20],   # Aumentado para 20
         "filename": file.filename
     }
+
+@app.post("/generate-docx")
+async def generate_docx(data: dict):
+    try:
+        doc = docx.Document()
+        
+        # Estilo global
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Arial'
+        font.size = Pt(11)
+
+        # Cabeçalho
+        name = data.get('name', 'Seu Nome')
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(name.upper())
+        run.bold = True
+        run.font.size = Pt(20)
+        run.font.color.rgb = RGBColor(30, 41, 59)
+
+        contact = doc.add_paragraph()
+        contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        contact_info = f"{data.get('email', '')} | {data.get('phone', '')}"
+        contact.add_run(contact_info).font.size = Pt(10)
+
+        def add_section_title(title):
+            p = doc.add_paragraph()
+            p.space_before = Pt(15)
+            run = p.add_run(title.upper())
+            run.bold = True
+            run.font.size = Pt(12)
+            run.font.color.rgb = RGBColor(37, 99, 235)
+
+        # Resumo
+        if data.get('summary'):
+            add_section_title("Resumo Profissional")
+            doc.add_paragraph(data.get('summary', ''))
+
+        # Experiência
+        if data.get('experiences'):
+            add_section_title("Experiência Profissional")
+            for exp in data.get('experiences', []):
+                p = doc.add_paragraph()
+                p.space_before = Pt(10)
+                run = p.add_run(exp.get('title', ''))
+                run.bold = True
+                
+                p = doc.add_paragraph()
+                company_date = f"{exp.get('company', '')} | {exp.get('date', '')}"
+                run = p.add_run(company_date)
+                run.italic = True
+                run.font.size = Pt(10)
+                
+                doc.add_paragraph(exp.get('description', ''))
+
+        # Habilidades
+        if data.get('skills'):
+            add_section_title("Habilidades e Competências")
+            skills = ", ".join(data.get('skills', []))
+            doc.add_paragraph(skills)
+
+        target = io.BytesIO()
+        doc.save(target)
+        target.seek(0)
+
+        return StreamingResponse(
+            target,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": "attachment; filename=Curriculo_Otimizado_DestravaCV.docx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar DOCX: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

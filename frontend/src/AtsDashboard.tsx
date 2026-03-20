@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ResumeEditor from './ResumeEditor';
 
 interface AtsDashboardProps {
   score: number;
@@ -7,6 +8,8 @@ interface AtsDashboardProps {
 }
 
 export default function AtsDashboard({ score, missingKeywords, commonKeywords }: AtsDashboardProps) {
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
   // Lógica para definir o status com base na nota
   let statusText = "REPROVADO";
   let statusColorClass = "bg-red-100 text-red-600";
@@ -173,12 +176,22 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords }:
             </div>
           </div>
 
-          <button className="bg-white text-blue-600 px-8 py-3 rounded-xl font-bold shadow-md hover:bg-gray-50 transition-colors">
-            Gerar currículo otimizado (Em Breve)
+          <button 
+            onClick={() => setIsEditorOpen(true)}
+            className="bg-white text-blue-600 px-8 py-3 rounded-xl font-bold shadow-md hover:bg-gray-50 transition-colors"
+          >
+            Gerar currículo otimizado
           </button>
         </div>
 
       </div>
+
+      {isEditorOpen && (
+        <ResumeEditor 
+          initialData={{ missingKeywords, commonKeywords }} 
+          onClose={() => setIsEditorOpen(false)} 
+        />
+      )}
     </div>
   );
 }
