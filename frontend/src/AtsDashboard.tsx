@@ -71,10 +71,35 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords, j
 
           <div className="flex gap-16 mt-12 items-center">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-500">Match Score</p>
-              <div className="flex items-baseline gap-1">
-                <h1 className={`text-7xl font-black ${textColorClass}`}>{score}</h1>
-                <span className="text-slate-400 font-bold text-xl">/100</span>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-4 text-slate-500 text-center md:text-left">Match Score</p>
+              <div className="relative inline-flex items-center justify-center">
+                <svg className="w-32 h-32 transform -rotate-90">
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="58"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="transparent"
+                    className={`${isDark ? 'text-slate-700' : 'text-slate-100'}`}
+                  />
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="58"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="transparent"
+                    strokeDasharray={364.4}
+                    strokeDashoffset={364.4 - (364.4 * score) / 100}
+                    strokeLinecap="round"
+                    className={`transition-all duration-1000 ease-out ${textColorClass}`}
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className={`text-4xl font-black ${textColorClass}`}>{score}</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Aderência</span>
+                </div>
               </div>
             </div>
 
