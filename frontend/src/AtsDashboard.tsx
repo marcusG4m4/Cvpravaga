@@ -132,7 +132,7 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords, j
 
       {isEditorOpen && (
         <ResumeEditor 
-          initialData={{ missingKeywords, commonKeywords, jobDescription, resumeText }} 
+          initialData={{ missingKeywords, commonKeywords, jobDescription, resumeText, initialScore: score }} 
           onClose={() => setIsEditorOpen(false)} 
         />
       )}
