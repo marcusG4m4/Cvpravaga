@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ResumeEditor from './ResumeEditor';
+import axios from 'axios';
 
 interface AtsDashboardProps {
   score: number;
@@ -12,6 +13,9 @@ interface AtsDashboardProps {
 
 export default function AtsDashboard({ score, missingKeywords, commonKeywords, jobDescription, resumeText, isDarkMode }: AtsDashboardProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
+  const [coverLetter, setCoverLetter] = useState<string | null>(null);
+  
   const isDark = isDarkMode;
 
   // Lógica para definir o status com base na nota
@@ -34,6 +38,23 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords, j
     riskText = "⚠ Pode precisar de ajustes";
     descriptionText = "Seu currículo tem boa aderência, mas faltam algumas palavras-chave importantes que podem aumentar suas chances.";
   }
+
+  const handleGenerateCoverLetter = async () => {
+    setIsGeneratingLetter(true);
+    setCoverLetter(null);
+    try {
+      const response = await axios.post('http://localhost:8000/generate-cover-letter', {
+        resume_text: resumeText,
+        job_description: jobDescription
+      });
+      setCoverLetter(response.data.cover_letter);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || "Erro ao gerar carta de apresentação.";
+      alert(errorMsg);
+    } finally {
+      setIsGeneratingLetter(false);
+    }
+  };
 
   return (
     <div className={`p-10 rounded-[3rem] mt-12 transition-all ${isDark ? 'bg-slate-900/40 border border-slate-800' : 'bg-slate-100 border border-slate-200'}`}>
@@ -115,18 +136,56 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords, j
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="col-span-1 md:col-span-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-12 text-center shadow-2xl shadow-blue-600/30">
-          <h2 className="text-3xl font-black text-white mb-4">Pronto para destravar sua carreira?</h2>
-          <p className="text-blue-100 text-lg mb-10 font-medium">Deixe nossa IA reescrever seu currículo agora mesmo com foco total nesta vaga.</p>
+        {/* CTAs */}
+        <div className={`col-span-1 md:col-span-3 rounded-[3rem] p-12 text-center shadow-2xl transition-all ${isDark ? 'bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700' : 'bg-gradient-to-br from-blue-600 to-indigo-700'}`}>
+          <h2 className={`text-3xl font-black mb-4 ${isDark ? 'text-white' : 'text-white'}`}>Pronto para destravar sua carreira?</h2>
+          <p className={`text-lg mb-10 font-medium ${isDark ? 'text-slate-400' : 'text-blue-100'}`}>Utilize nossa IA para reescrever seu currículo ou criar uma carta de apresentação sob medida.</p>
 
-          <button 
-            onClick={() => setIsEditorOpen(true)}
-            className="bg-white text-blue-700 hover:bg-blue-50 px-12 py-6 rounded-[2rem] text-xl font-black shadow-2xl transition-all hover:scale-105 active:scale-95"
-          >
-            🚀 Gerar currículo otimizado com IA
-          </button>
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <button 
+              onClick={() => setIsEditorOpen(true)}
+              className={`px-10 py-6 rounded-[2rem] text-lg font-black shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 ${isDark ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-white text-blue-700 hover:bg-blue-50'}`}
+            >
+              🚀 Otimizar Currículo
+            </button>
+
+            <button 
+              onClick={handleGenerateCoverLetter}
+              disabled={isGeneratingLetter}
+              className={`px-10 py-6 rounded-[2rem] text-lg font-black shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:scale-100 ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600 border border-slate-600' : 'bg-indigo-800 text-white hover:bg-indigo-900 border border-indigo-500'}`}
+            >
+              {isGeneratingLetter ? (
+                 <span className="flex items-center gap-2">
+                   <span className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin"></span>
+                   Gerando...
+                 </span>
+              ) : '✉️ Gerar Carta de Apresentação'}
+            </button>
+          </div>
         </div>
+
+        {/* MODAL CARTA DE APRESENTAÇÃO */}
+        {coverLetter && (
+          <div className="col-span-1 md:col-span-3 mt-4 animate-[fadeIn_0.5s_ease-out]">
+            <div className={`p-10 rounded-[2.5rem] shadow-2xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>Sua Carta de Apresentação</h3>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(coverLetter);
+                    alert("Copiado para a área de transferência!");
+                  }}
+                  className="text-sm font-bold bg-blue-100 text-blue-600 px-4 py-2 rounded-xl hover:bg-blue-200 transition-colors"
+                >
+                  Copiar Texto
+                </button>
+              </div>
+              <div className={`p-8 rounded-2xl whitespace-pre-wrap leading-relaxed font-medium ${isDark ? 'bg-slate-900/50 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>
+                {coverLetter}
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
 

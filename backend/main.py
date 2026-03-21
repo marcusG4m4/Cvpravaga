@@ -118,45 +118,81 @@ async def scan_resume(file: UploadFile = File(...), job_description: str = Form(
 @app.post("/auto-optimize-resume")
 async def auto_optimize_resume(data: dict):
     if not GENIMINI_API_KEY:
+        raise HTTPException(status_code=400, detail="IA não configurada. Defina a variável GEMINI_API_KEY.")
+
+    resume_text = data.get('resume_text', '')
+    job_description = data.get('job_description', '')
+
+    prompt = f"""
+    Você é um Tech Recruiter Sênior e Especialista em ATS (Applicant Tracking Systems).
+    Sua missão é reescrever o currículo fornecido para que ele tenha o MÁXIMO de aderência à vaga descrita, 
+    sem inventar experiências que o candidato não teve.
+
+    INSTRUÇÕES RÍGIDAS:
+    1. MANTENHA a verdade: Não invente cargos, empresas ou graduações.
+    2. RESUMO PROFISSIONAL: Crie um parágrafo de 3-4 linhas, de alto impacto, incluindo as principais palavras-chave da vaga.
+    3. EXPERIÊNCIAS: Reescreva os 'bullet points' de cada experiência focando em CONQUISTAS e MÉTRICAS (método STAR: Situação, Tarefa, Ação, Resultado). Incorpore as tecnologias da vaga onde fizer sentido.
+    4. SKILLS: Extraia uma lista consolidada das habilidades técnicas e comportamentais mais relevantes para a vaga.
+    
+    RETORNE ESTRITAMENTE UM JSON VÁLIDO E NADA MAIS. O JSON deve ter este formato exato:
+    {{
+        "name": "Nome Completo Extraído ou 'Seu Nome'",
+        "email": "email@extraido.com",
+        "phone": "Telefone Extraído",
+        "summary": "Resumo de alto impacto...",
+        "experiences": [
+            {{ "title": "Cargo", "company": "Empresa", "date": "Período", "description": "• Conquista 1...\\n• Conquista 2..." }}
+        ],
+        "skills": ["Skill 1", "Skill 2"]
+    }}
+
+    VAGA ALVO:
+    {job_description}
+
+    CURRÍCULO ORIGINAL:
+    {resume_text}
+    """
+
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        # Tenta extrair apenas a parte JSON da resposta
+        match = re.search(r'\{.*\}', response.text, re.DOTALL)
+        if not match:
+            raise ValueError("O modelo não retornou um JSON válido.")
+        json_str = match.group()
+        return json.loads(json_str)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na IA: {str(e)}")
+
+@app.post("/generate-cover-letter")
+async def generate_cover_letter(data: dict):
+    if not GENIMINI_API_KEY:
         raise HTTPException(status_code=400, detail="IA não configurada.")
 
     resume_text = data.get('resume_text', '')
     job_description = data.get('job_description', '')
 
     prompt = f"""
-    Você é um especialista em recrutamento e seleção (Tech Recruiter). 
-    Sua missão é pegar o currículo do candidato e REESCREVÊ-LO de forma TOTALMENTE OTIMIZADA para a vaga abaixo.
+    Você é um especialista em carreira. Escreva uma Carta de Apresentação (Cover Letter) persuasiva e profissional.
+    Ela deve conectar as experiências do currículo do candidato com as necessidades específicas da vaga.
     
     INSTRUÇÕES:
-    1. Mantenha os dados reais do candidato (nome, empresas, datas).
-    2. Reescreva o resumo profissional para que ele inclua as competências e tecnologias exigidas na vaga.
-    3. Reescreva as descrições de experiência para focar em RESULTADOS e incluir requisitos da vaga de forma orgânica.
-    4. Adicione as habilidades técnicas (skills) que a vaga pede e que façam sentido para o perfil.
-    5. O objetivo é aumentar o score de match com o sistema ATS.
-    
-    RETORNE APENAS UM JSON VÁLIDO NESSA ESTRUTURA:
-    {{
-        "name": "nome",
-        "email": "email",
-        "phone": "telefone",
-        "summary": "resumo otimizado",
-        "experiences": [
-            {{ "title": "cargo", "company": "empresa", "date": "período", "description": "descrição otimizada focada em resultados" }}
-        ],
-        "skills": ["skill1", "skill2", ...]
-    }}
+    1. Tom profissional, entusiasmado e confiante.
+    2. Estrutura: Introdução (qual vaga e por que o interesse), Corpo (destacando 1-2 conquistas do currículo que provam a capacidade de resolver os problemas da vaga), e Conclusão (chamada para ação para uma entrevista).
+    3. Retorne APENAS o texto da carta de apresentação. Não inclua placeholders como '[Seu Nome]' no início, comece com uma saudação ("Prezado(a) responsável pelas contratações,").
+    4. Limite a 3 ou 4 parágrafos curtos.
 
     VAGA: {job_description}
-    CURRÍCULO ORIGINAL: {resume_text}
+    CURRÍCULO: {resume_text}
     """
 
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
-        json_str = re.search(r'\{.*\}', response.text, re.DOTALL).group()
-        return json.loads(json_str)
+        return {"cover_letter": response.text.strip()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar carta: {str(e)}")
 
 @app.post("/generate-docx")
 async def generate_docx(data: dict):
