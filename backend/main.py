@@ -59,24 +59,61 @@ def get_keywords(text: str):
 
 @app.post("/scan")
 async def scan_resume(file: UploadFile = File(...), job_description: str = Form(...)):
-    content = await file.read()
-    resume_text = extract_text_from_pdf(content) if file.filename.lower().endswith('.pdf') else extract_text_from_docx(content)
-    
-    # Similarity (TF-IDF)
-    vectorizer = TfidfVectorizer()
-    tfidf = vectorizer.fit_transform([resume_text.lower(), job_description.lower()])
-    match_score = round(cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0] * 100, 2)
+    try:
+        content = await file.read()
+        filename = file.filename.lower()
+        
+        if filename.endswith('.pdf'):
+            resume_text = extract_text_from_pdf(content)
+        elif filename.endswith('.docx'):
+            resume_text = extract_text_from_docx(content)
+        else:
+            # Tentar extrair como texto se for outra extensão ou falhar
+            try:
+                resume_text = content.decode('utf-8')
+            except:
+                resume_text = extract_text_from_docx(content) # Fallback
 
-    resume_keywords = get_keywords(resume_text)
-    jd_keywords = get_keywords(job_description)
-    
-    return {
-        "match_score": match_score,
-        "missing_keywords": sorted(list(jd_keywords - resume_keywords))[:20],
-        "common_keywords": sorted(list(jd_keywords & resume_keywords))[:20],
-        "filename": file.filename,
-        "resume_text": resume_text
-    }
+        if not resume_text.strip():
+            return {
+                "match_score": 0,
+                "missing_keywords": sorted(list(get_keywords(job_description)))[:20],
+                "common_keywords": [],
+                "filename": file.filename,
+                "resume_text": ""
+            }
+
+        if not job_description.strip():
+             return {
+                "match_score": 0,
+                "missing_keywords": [],
+                "common_keywords": [],
+                "filename": file.filename,
+                "resume_text": resume_text
+            }
+
+        # Similarity (TF-IDF)
+        try:
+            vectorizer = TfidfVectorizer()
+            tfidf = vectorizer.fit_transform([resume_text.lower(), job_description.lower()])
+            match_score = round(cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0] * 100, 2)
+        except ValueError:
+            # Caso o vocabulário seja vazio (apenas stop words)
+            match_score = 0
+
+        resume_keywords = get_keywords(resume_text)
+        jd_keywords = get_keywords(job_description)
+        
+        return {
+            "match_score": match_score,
+            "missing_keywords": sorted(list(jd_keywords - resume_keywords))[:20],
+            "common_keywords": sorted(list(jd_keywords & resume_keywords))[:20],
+            "filename": file.filename,
+            "resume_text": resume_text
+        }
+    except Exception as e:
+        print(f"Erro no scan: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/auto-optimize-resume")
 async def auto_optimize_resume(data: dict):

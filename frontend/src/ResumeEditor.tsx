@@ -110,8 +110,10 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
       });
       setData(response.data);
       addToast("🚀 IA completou a otimização inicial!", "info");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      const errorMsg = error.response?.data?.detail || "Erro ao otimizar com IA.";
+      alert(errorMsg);
     } finally {
       setIsOptimizing(false);
     }
