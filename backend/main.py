@@ -100,20 +100,41 @@ async def scan_resume(file: UploadFile = File(...), job_description: str = Form(
 
         if not resume_text.strip():
             resume_text = ""
-        
-        # Similarity (TF-IDF)
-        match_score = 0
-        if resume_text.strip() and job_description.strip():
-            try:
-                vectorizer = TfidfVectorizer()
-                tfidf = vectorizer.fit_transform([resume_text.lower(), job_description.lower()])
-                match_score = round(cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0] * 100, 2)
-            except ValueError:
-                match_score = 0
 
-        resume_keywords = get_keywords(resume_text)
-        jd_keywords = get_keywords(job_description)
+        # LÓGICA DE MATCH BASEADA EM QUALIFICAÇÕES (IA)
+        jd_requirements = []
+        if client and job_description.strip():
+            try:
+                # Extrair apenas os termos técnicos e qualificações essenciais da vaga
+                prompt_extract = f"Extraia apenas as Hard Skills (tecnologias, idiomas, certificações) essenciais desta vaga como uma lista simples de termos separados por vírgula. VAGA: {job_description}"
+                resp_jd = client.models.generate_content(model='gemini-1.5-flash', contents=prompt_extract)
+                jd_requirements = [s.strip().lower() for s in resp_jd.text.split(',')]
+            except:
+                jd_requirements = list(get_keywords(job_description))
+        else:
+            jd_requirements = list(get_keywords(job_description))
+
+        # Limpar requisitos vazios ou muito curtos
+        jd_requirements = [r for r in jd_requirements if len(r) > 1]
         
+        # Verificar quantos requisitos da vaga estão no currículo
+        resume_text_lower = resume_text.lower()
+        found_requirements = []
+        missing_requirements = []
+
+        for req in jd_requirements:
+            # Busca simples por palavra-chave (pode ser melhorada com Regex futuramente)
+            if req in resume_text_lower:
+                found_requirements.append(req)
+            else:
+                missing_requirements.append(req)
+
+        # Cálculo do Score: Porcentagem de requisitos encontrados
+        if not jd_requirements:
+            match_score = 0
+        else:
+            match_score = round((len(found_requirements) / len(jd_requirements)) * 100, 2)
+
         # Salvar no histórico
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -126,8 +147,8 @@ async def scan_resume(file: UploadFile = File(...), job_description: str = Form(
 
         return {
             "match_score": match_score,
-            "missing_keywords": sorted(list(jd_keywords - resume_keywords))[:20],
-            "common_keywords": sorted(list(jd_keywords & resume_keywords))[:20],
+            "missing_keywords": sorted(missing_requirements)[:20],
+            "common_keywords": sorted(found_requirements)[:20],
             "filename": file.filename,
             "resume_text": resume_text
         }
