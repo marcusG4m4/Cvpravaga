@@ -5,10 +5,14 @@ interface AtsDashboardProps {
   score: number;
   missingKeywords: string[];
   commonKeywords: string[];
+  jobDescription: string;
+  resumeText?: string;
+  isDarkMode: boolean;
 }
 
-export default function AtsDashboard({ score, missingKeywords, commonKeywords }: AtsDashboardProps) {
+export default function AtsDashboard({ score, missingKeywords, commonKeywords, jobDescription, resumeText, isDarkMode }: AtsDashboardProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const isDark = isDarkMode;
 
   // Lógica para definir o status com base na nota
   let statusText = "REPROVADO";
@@ -32,155 +36,95 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords }:
   }
 
   return (
-    <div className="bg-gray-100 p-6 rounded-2xl mt-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className={`p-10 rounded-[3rem] mt-12 transition-all ${isDark ? 'bg-slate-900/40 border border-slate-800' : 'bg-slate-100 border border-slate-200'}`}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
         {/* RESULTADO */}
-        <div className="col-span-1 md:col-span-2 bg-white rounded-2xl shadow p-6">
+        <div className={`col-span-1 md:col-span-2 rounded-[2.5rem] shadow-2xl p-10 transition-all ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-100'}`}>
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Resultado da Análise</h2>
-            <span className={`${statusColorClass} px-3 py-1 rounded-full text-xs font-semibold`}>
+            <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>Resultado da Análise</h2>
+            <span className={`${statusColorClass} px-5 py-2 rounded-full text-xs font-black tracking-widest uppercase`}>
               {statusText}
             </span>
           </div>
 
-          <p className="text-sm text-gray-500 mt-1">
-            Baseado nos critérios de +50 ATS do mercado
-          </p>
-
-          <div className="flex gap-10 mt-6 items-center">
+          <div className="flex gap-16 mt-12 items-center">
             <div>
-              <p className="text-xs text-gray-500 font-semibold mb-1">SCORE GERAL</p>
-              <h1 className={`text-5xl font-bold ${textColorClass}`}>{score}</h1>
-              <span className="text-gray-400">/100</span>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-500">Match Score</p>
+              <div className="flex items-baseline gap-1">
+                <h1 className={`text-7xl font-black ${textColorClass}`}>{score}</h1>
+                <span className="text-slate-400 font-bold text-xl">/100</span>
+              </div>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500 font-semibold mb-1">CLASSIFICAÇÃO</p>
-              <p className="font-semibold text-gray-800">
-                {score >= 50 ? (score >= 80 ? "Alta aderência ao ATS" : "Aderência moderada ao ATS") : "Reprovado automaticamente pelo ATS"}
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-500">Status ATS</p>
+              <p className={`font-black text-xl ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {score >= 50 ? (score >= 80 ? "Alta Aderência" : "Aderência Moderada") : "Baixa Aderência"}
               </p>
-              <p className={`text-sm mt-2 font-medium ${textColorClass}`}>
+              <p className={`text-sm mt-2 font-bold ${textColorClass}`}>
                 {riskText}
               </p>
             </div>
           </div>
 
-          <p className="text-sm text-gray-600 mt-6 leading-relaxed">
+          <p className={`text-lg mt-12 leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             {descriptionText}
           </p>
         </div>
 
-        {/* COMPOSIÇÃO (Visual ilustrativo adaptado) */}
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h3 className="font-semibold mb-4 text-gray-800">Métricas da Análise</h3>
+        {/* MÉTRICAS */}
+        <div className={`rounded-[2.5rem] shadow-2xl p-10 transition-all ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-100'}`}>
+          <h3 className={`font-black text-lg mb-8 ${isDark ? 'text-white' : 'text-slate-800'}`}>Métricas</h3>
 
           {[
             ["Match de Palavras", `${score}%`],
-            ["Faltantes", missingKeywords.length.toString()],
-            ["Encontradas", commonKeywords.length.toString()],
+            ["Keywords Faltantes", missingKeywords.length.toString()],
+            ["Keywords Encontradas", commonKeywords.length.toString()],
           ].map(([label, value]) => (
-            <div key={label} className="flex justify-between mb-3 border-b border-gray-100 pb-2 last:border-0">
-              <span className="text-sm text-gray-600">{label}</span>
-              <span className="text-sm font-semibold text-gray-800">{value}</span>
+            <div key={label} className={`flex justify-between mb-6 border-b pb-4 last:border-0 ${isDark ? 'border-slate-700' : 'border-slate-50'}`}>
+              <span className={`text-sm font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</span>
+              <span className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{value}</span>
             </div>
           ))}
-
-          {missingKeywords.length > 0 && (
-            <>
-              <h4 className="mt-4 text-sm font-semibold text-red-500">
-                AÇÕES IMEDIATAS
-              </h4>
-              <ul className="text-xs text-red-500 mt-2 space-y-1">
-                <li>• Adicionar palavras-chave ausentes</li>
-                <li>• Revisar os requisitos da vaga</li>
-              </ul>
-            </>
-          )}
         </div>
 
-        {/* PALAVRAS-CHAVE AUSENTES */}
-        <div className="col-span-1 md:col-span-3 bg-white rounded-2xl shadow p-6">
-          <h3 className="font-semibold text-gray-800">Palavras-chave Ausentes</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Termos importantes da vaga que não foram encontrados no seu CV
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {missingKeywords.length > 0 ? (
-              missingKeywords.map(tag => (
-                <span
-                  key={tag}
-                  className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium border border-red-200"
-                >
-                  {tag}
-                </span>
-              ))
-            ) : (
-              <p className="text-sm text-green-600 font-medium">Nenhuma palavra-chave importante ausente!</p>
-            )}
+        {/* KEYWORDS */}
+        <div className={`col-span-1 md:col-span-3 rounded-[2.5rem] shadow-2xl p-10 transition-all ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-100'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div>
+              <h3 className="font-black text-red-500 text-sm uppercase tracking-widest mb-6">Palavras-chave Ausentes</h3>
+              <div className="flex flex-wrap gap-3">
+                {missingKeywords.map(tag => (
+                  <span key={tag} className={`px-4 py-2 rounded-xl text-xs font-bold border ${isDark ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-red-50 bg-red-100 text-red-600'}`}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="font-black text-green-500 text-sm uppercase tracking-widest mb-6">Palavras-chave Encontradas</h3>
+              <div className="flex flex-wrap gap-3">
+                {commonKeywords.map(tag => (
+                  <span key={tag} className={`px-4 py-2 rounded-xl text-xs font-bold border ${isDark ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-green-50 bg-green-100 text-green-600'}`}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* PONTOS FORTES */}
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h3 className="font-semibold text-green-600 mb-2">
-            Pontos Fortes (Encontrados)
-          </h3>
-
-          <ul className="text-sm text-gray-700 space-y-2">
-            {commonKeywords.length > 0 ? (
-              commonKeywords.map(tag => (
-                <li key={tag} className="flex items-center gap-2">
-                  <span>✅</span> <span className="capitalize">{tag}</span>
-                </li>
-              ))
-            ) : (
-              <li className="text-gray-500 italic">Nenhum ponto forte extraído nesta análise.</li>
-            )}
-          </ul>
-        </div>
-
-        {/* DICAS */}
-        <div className="col-span-1 md:col-span-2 bg-white rounded-2xl shadow p-6">
-          <h3 className="font-semibold text-blue-600 mb-2">
-            Dicas de Otimização
-          </h3>
-
-          <ul className="text-sm text-gray-700 space-y-2">
-            <li className="flex items-center gap-2"><span className="text-blue-500">•</span> Adaptar o CV especificamente para esta vaga.</li>
-            <li className="flex items-center gap-2"><span className="text-blue-500">•</span> Incluir as palavras-chave ausentes de forma natural nas suas experiências.</li>
-            <li className="flex items-center gap-2"><span className="text-blue-500">•</span> Quantificar seus resultados (ex: "aumentei as vendas em 20%").</li>
-            <li className="flex items-center gap-2"><span className="text-blue-500">•</span> Garantir que o formato do PDF/Word esteja limpo e sem tabelas complexas.</li>
-          </ul>
         </div>
 
         {/* CTA */}
-        <div className="col-span-1 md:col-span-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl p-6 text-center shadow-lg">
-          <p className="text-lg font-semibold">
-            {score < 70 ? "Com esse score, você pode estar perdendo oportunidades." : "Ótimo trabalho! Seu currículo está forte."}
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-6 md:gap-10 my-6">
-            <div className="bg-white/10 px-4 py-2 rounded-lg">
-              <p className="text-3xl font-bold">90+</p>
-              <span className="text-sm text-blue-100">Score ideal</span>
-            </div>
-            <div className="bg-white/10 px-4 py-2 rounded-lg">
-              <p className="text-3xl font-bold">3x</p>
-              <span className="text-sm text-blue-100">Mais entrevistas</span>
-            </div>
-            <div className="bg-white/10 px-4 py-2 rounded-lg">
-              <p className="text-3xl font-bold">2 min</p>
-              <span className="text-sm text-blue-100">Tempo médio ATS</span>
-            </div>
-          </div>
+        <div className="col-span-1 md:col-span-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-12 text-center shadow-2xl shadow-blue-600/30">
+          <h2 className="text-3xl font-black text-white mb-4">Pronto para destravar sua carreira?</h2>
+          <p className="text-blue-100 text-lg mb-10 font-medium">Deixe nossa IA reescrever seu currículo agora mesmo com foco total nesta vaga.</p>
 
           <button 
             onClick={() => setIsEditorOpen(true)}
-            className="bg-white text-blue-600 px-8 py-3 rounded-xl font-bold shadow-md hover:bg-gray-50 transition-colors"
+            className="bg-white text-blue-700 hover:bg-blue-50 px-12 py-6 rounded-[2rem] text-xl font-black shadow-2xl transition-all hover:scale-105 active:scale-95"
           >
-            Gerar currículo otimizado
+            🚀 Gerar currículo otimizado com IA
           </button>
         </div>
 
@@ -188,7 +132,7 @@ export default function AtsDashboard({ score, missingKeywords, commonKeywords }:
 
       {isEditorOpen && (
         <ResumeEditor 
-          initialData={{ missingKeywords, commonKeywords }} 
+          initialData={{ missingKeywords, commonKeywords, jobDescription, resumeText }} 
           onClose={() => setIsEditorOpen(false)} 
         />
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ResumePDF } from './ResumePDF';
 import axios from 'axios';
@@ -21,6 +21,8 @@ interface ResumeEditorProps {
   initialData: {
     missingKeywords: string[];
     commonKeywords: string[];
+    jobDescription: string;
+    resumeText?: string;
   };
   onClose: () => void;
 }
@@ -31,13 +33,35 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
     email: '',
     phone: '',
     summary: '',
-    experiences: [
-      { title: '', company: '', date: '', description: '' }
-    ],
-    skills: [...initialData.commonKeywords]
+    experiences: [{ title: '', company: '', date: '', description: '' }],
+    skills: []
   });
 
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+  const isDark = document.documentElement.classList.contains('dark');
+
+  useEffect(() => {
+    if (initialData.resumeText) {
+      handleAutoOptimize();
+    }
+  }, [initialData.resumeText]);
+
+  const handleAutoOptimize = async () => {
+    setIsOptimizing(true);
+    try {
+      const response = await axios.post('http://localhost:8000/auto-optimize-resume', {
+        resume_text: initialData.resumeText,
+        job_description: initialData.jobDescription
+      });
+      setData(response.data);
+    } catch (error) {
+      console.error(error);
+      alert("Erro na otimização automática.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -50,180 +74,167 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
     setData({ ...data, experiences: newExperiences });
   };
 
-  const addExperience = () => {
-    setData({
-      ...data,
-      experiences: [...data.experiences, { title: '', company: '', date: '', description: '' }]
-    });
-  };
-
-  const removeExperience = (index: number) => {
-    if (data.experiences.length > 1) {
-      const newExperiences = data.experiences.filter((_, i) => i !== index);
-      setData({ ...data, experiences: newExperiences });
-    }
-  };
-
-  const addSkill = (skill: string) => {
-    if (!data.skills.includes(skill)) {
-      setData({ ...data, skills: [...data.skills, skill] });
-    }
-  };
-
-  const removeSkill = (index: number) => {
-    const newSkills = data.skills.filter((_, i) => i !== index);
-    setData({ ...data, skills: newSkills });
-  };
-
   const downloadDocx = async () => {
     setIsGeneratingDocx(true);
     try {
-      const response = await axios.post('http://localhost:8000/generate-docx', data, {
-        responseType: 'blob',
-      });
+      const response = await axios.post('http://localhost:8000/generate-docx', data, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'Curriculo_Otimizado_DestravaCV.docx');
+      link.setAttribute('download', 'Curriculo_Otimizado.docx');
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (error) {
-      console.error('Erro ao gerar DOCX:', error);
-      alert('Erro ao gerar o arquivo Word.');
+      alert('Erro ao gerar Word.');
     } finally {
       setIsGeneratingDocx(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-6xl max-h-[95vh] flex flex-col shadow-2xl animate-[fadeIn_0.3s_ease-out]">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] flex flex-col shadow-2xl animate-[fadeIn_0.3s_ease-out] border transition-all ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100'}`}>
         
-        {/* Cabeçalho */}
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-3xl">
+        {/* Header */}
+        <div className={`p-8 border-b flex justify-between items-center rounded-t-3xl ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50/50 border-gray-100'}`}>
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Editor de Currículo <span className="text-blue-600">Otimizado</span></h2>
-            <p className="text-gray-500 text-sm">Preencha seus dados e adicione as palavras-chave sugeridas para melhorar seu score.</p>
+            <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Editor <span className="text-blue-500">Inteligente</span>
+            </h2>
+            <p className={`text-sm mt-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>A IA reescreveu seu currículo para esta vaga específica.</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-3xl font-light">&times;</button>
+          <div className="flex items-center gap-6">
+            {isOptimizing && (
+              <div className={`flex items-center gap-3 font-black text-xs px-5 py-2.5 rounded-full animate-pulse ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                <span className="w-2 h-2 bg-current rounded-full animate-bounce"></span>
+                OTIMIZANDO COM IA...
+              </div>
+            )}
+            <button onClick={onClose} className={`text-4xl font-light transition-colors ${isDark ? 'text-slate-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}>&times;</button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div className="flex-1 overflow-y-auto p-8 lg:p-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             
-            {/* Seção de Formulário */}
-            <div className="space-y-8">
+            {/* Form Side */}
+            <div className="lg:col-span-8 space-y-12">
               <section>
-                <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">Dados Pessoais</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" name="name" placeholder="Nome Completo" className="input-style" onChange={handleInputChange} />
-                  <input type="email" name="email" placeholder="E-mail" className="input-style" onChange={handleInputChange} />
-                  <input type="text" name="phone" placeholder="Telefone de Contato" className="input-style" onChange={handleInputChange} />
+                <h3 className={`text-xl font-black mb-8 flex items-center gap-3 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
+                  Dados Pessoais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                    { label: 'Nome Completo', name: 'name', type: 'text' },
+                    { label: 'E-mail', name: 'email', type: 'email' },
+                    { label: 'Telefone', name: 'phone', type: 'text' },
+                  ].map(field => (
+                    <div key={field.name} className="space-y-2">
+                      <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{field.label}</label>
+                      <input 
+                        type={field.type} 
+                        name={field.name} 
+                        className={`input-style ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`} 
+                        value={(data as any)[field.name]} 
+                        onChange={handleInputChange} 
+                      />
+                    </div>
+                  ))}
                 </div>
               </section>
 
               <section>
-                <h3 className="text-lg font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">Resumo Profissional</h3>
+                <h3 className={`text-xl font-black mb-8 flex items-center gap-3 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
+                  Resumo Otimizado
+                </h3>
                 <textarea 
                   name="summary" 
-                  rows={4} 
-                  placeholder="Escreva um resumo impactante (Dica: tente incluir palavras-chave da vaga de forma natural aqui)" 
-                  className="input-style w-full" 
+                  rows={6} 
+                  value={data.summary}
+                  className={`input-style w-full resize-none leading-relaxed ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`} 
                   onChange={handleInputChange} 
                 />
               </section>
 
               <section>
-                <div className="flex justify-between items-center mb-4 border-l-4 border-blue-600 pl-3">
-                  <h3 className="text-lg font-bold text-gray-800">Experiência Profissional</h3>
-                  <button onClick={addExperience} className="text-sm bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 font-semibold transition-colors">+ Nova Experiência</button>
-                </div>
+                <h3 className={`text-xl font-black mb-8 flex items-center gap-3 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
+                  Experiências Reescritas
+                </h3>
                 {data.experiences.map((exp, i) => (
-                  <div key={i} className="p-5 bg-gray-50 rounded-2xl mb-6 space-y-3 border border-gray-100 relative">
-                    {data.experiences.length > 1 && (
-                      <button 
-                        onClick={() => removeExperience(i)} 
-                        className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors"
-                        title="Remover experiência"
-                      >
-                        Remover
-                      </button>
-                    )}
-                    <input type="text" placeholder="Cargo / Função" className="input-style w-full" onChange={(e) => handleExperienceChange(i, 'title', e.target.value)} />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="Empresa" className="input-style" onChange={(e) => handleExperienceChange(i, 'company', e.target.value)} />
-                      <input type="text" placeholder="Período (ex: Jan 2021 - Atual)" className="input-style" onChange={(e) => handleExperienceChange(i, 'date', e.target.value)} />
+                  <div key={i} className={`p-8 rounded-[2rem] mb-10 border space-y-6 transition-all shadow-sm ${isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Cargo</label>
+                        <input type="text" className={`input-style font-bold ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200 text-slate-900'}`} value={exp.title} onChange={(e) => handleExperienceChange(i, 'title', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Empresa</label>
+                        <input type="text" className={`input-style font-bold ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200 text-slate-900'}`} value={exp.company} onChange={(e) => handleExperienceChange(i, 'company', e.target.value)} />
+                      </div>
                     </div>
-                    <textarea placeholder="Principais conquistas, responsabilidades e tecnologias utilizadas." className="input-style w-full" rows={3} onChange={(e) => handleExperienceChange(i, 'description', e.target.value)} />
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Descrição Otimizada</label>
+                      <textarea 
+                        rows={5} 
+                        value={exp.description}
+                        className={`input-style w-full resize-none leading-relaxed ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200 text-slate-900'}`}
+                        onChange={(e) => handleExperienceChange(i, 'description', e.target.value)} 
+                      />
+                    </div>
                   </div>
                 ))}
               </section>
             </div>
 
-            {/* Seção Lateral de Otimização */}
-            <div className="space-y-8">
-              <section className="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
-                <h3 className="text-blue-800 font-bold mb-4 flex items-center gap-2">
-                  <span className="text-xl">🚀</span> Sugestões do ATS
+            {/* Sidebar Side */}
+            <div className="lg:col-span-4 space-y-8">
+              <section className={`p-8 rounded-[2.5rem] shadow-2xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-900 text-white'}`}>
+                <h3 className={`text-lg font-black mb-4 flex items-center gap-2 ${isDark ? 'text-white' : 'text-white'}`}>
+                  <span className="text-yellow-400 text-xl">✨</span> 
+                  Exportar CV
                 </h3>
-                <p className="text-blue-700 text-sm mb-4">Palavras-chave que faltam no seu perfil original. Clique para adicionar:</p>
-                <div className="flex flex-wrap gap-2">
-                  {initialData.missingKeywords.length > 0 ? (
-                    initialData.missingKeywords.map(kw => (
-                      <button 
-                        key={kw} 
-                        onClick={() => addSkill(kw)}
-                        className="bg-white text-blue-600 px-3 py-2 rounded-full text-xs font-bold border border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center gap-1"
-                      >
-                        <span className="text-lg">+</span> {kw}
+                <p className={`text-xs mb-8 leading-relaxed font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+                  Seu currículo foi ajustado para atingir a nota máxima nos sistemas de recrutamento.
+                </p>
+                
+                <div className="space-y-4 mb-10">
+                  <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Habilidades Adicionais</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {data.skills.map((skill, i) => (
+                      <span key={i} className="bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-xl text-[10px] font-bold border border-blue-500/30">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <PDFDownloadLink document={<ResumePDF data={data} />} fileName="Curriculo_DestravaCV.pdf">
+                    {({ loading }) => (
+                      <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-[1.5rem] shadow-xl transition-all flex items-center justify-center gap-3">
+                        📄 {loading ? 'GERANDO...' : 'BAIXAR EM PDF'}
                       </button>
-                    ))
-                  ) : (
-                    <p className="text-sm text-green-600 font-medium">Você já possui as principais palavras-chave!</p>
-                  )}
+                    )}
+                  </PDFDownloadLink>
+
+                  <button 
+                    onClick={downloadDocx}
+                    disabled={isGeneratingDocx || isOptimizing}
+                    className={`w-full font-black py-5 rounded-[1.5rem] shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white text-slate-900 hover:bg-gray-100'}`}
+                  >
+                    <span className="text-xl font-serif">W</span> {isGeneratingDocx ? 'PROCESSANDO...' : 'BAIXAR WORD'}
+                  </button>
                 </div>
               </section>
 
-              <section>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Habilidades Selecionadas</h3>
-                <div className="flex flex-wrap gap-2 bg-gray-50 p-4 rounded-2xl min-h-[100px] border border-gray-100">
-                  {data.skills.map((skill, i) => (
-                    <span 
-                      key={i} 
-                      className="bg-white text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold shadow-sm flex items-center gap-2 group border border-gray-200"
-                    >
-                      {skill}
-                      <button onClick={() => removeSkill(i)} className="text-gray-300 hover:text-red-500 font-bold">×</button>
-                    </span>
-                  ))}
-                  {data.skills.length === 0 && <p className="text-gray-400 text-sm italic">Nenhuma habilidade adicionada ainda.</p>}
-                </div>
-              </section>
-
-              {/* Botões de Ação */}
-              <div className="pt-10 border-t border-gray-100 space-y-4">
-                <PDFDownloadLink document={<ResumePDF data={data} />} fileName="Curriculo_DestravaCV_Otimizado.pdf">
-                  {({ loading }) => (
-                    <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-10 rounded-2xl shadow-xl transition-all w-full flex items-center justify-center gap-3 transform hover:-translate-y-1">
-                      <span className="text-xl">📄</span> {loading ? 'Gerando arquivo...' : 'Baixar em PDF'}
-                    </button>
-                  )}
-                </PDFDownloadLink>
-
-                <button 
-                  onClick={downloadDocx}
-                  disabled={isGeneratingDocx}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-2xl shadow-xl transition-all w-full flex items-center justify-center gap-3 transform hover:-translate-y-1 disabled:bg-gray-400"
-                >
-                  <span className="text-xl">W</span> {isGeneratingDocx ? 'Gerando arquivo...' : 'Baixar em Word (.docx)'}
-                </button>
-
-                <div className="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-100">
-                  <p className="text-yellow-800 text-xs leading-relaxed">
-                    <strong>Dica DestravaCV:</strong> Ambos os formatos são otimizados. O PDF garante que o layout não mude, enquanto o Word é ideal se você precisar fazer ajustes manuais depois.
-                  </p>
-                </div>
+              <div className={`p-6 rounded-3xl border transition-all ${isDark ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+                <p className={`text-[11px] leading-relaxed italic font-medium ${isDark ? 'text-blue-400' : 'text-blue-800'}`}>
+                  <strong>Dica:</strong> O formato PDF é recomendado para manter o design, enquanto o Word é ideal se você quiser fazer ajustes manuais.
+                </p>
               </div>
             </div>
 
@@ -233,22 +244,17 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
       
       <style>{`
         .input-style {
-          background-color: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          padding: 12px 16px;
+          border-radius: 1.2rem;
+          padding: 16px 24px;
           font-size: 0.95rem;
           outline: none;
+          width: 100%;
           transition: all 0.2s;
-          color: #1e293b;
+          border-width: 2px;
         }
         .input-style:focus {
           border-color: #2563eb;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-          background-color: #fff;
-        }
-        .input-style::placeholder {
-          color: #94a3b8;
+          box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.1);
         }
       `}</style>
     </div>
