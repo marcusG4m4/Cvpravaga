@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, useEffect } from 'react'
+import { useState, useEffect, type ChangeEvent } from 'react'
 import axios from 'axios'
 import './App.css'
 import AtsDashboard from './AtsDashboard'
@@ -86,7 +86,7 @@ function App() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <div className="container mx-auto max-w-5xl px-4 py-8">
+      <div className="cnt mx-auto max-w-5xl px-4 py-8">
         <header className="flex justify-between items-center mb-12">
           <div>
             <h1 className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>

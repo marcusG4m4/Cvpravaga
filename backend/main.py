@@ -18,6 +18,10 @@ import os
 import json
 import sqlite3
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente
+load_dotenv()
 
 # Download stopwords
 try:
@@ -89,16 +93,22 @@ async def scan_resume(file: UploadFile = File(...), job_description: str = Form(
         filename = file.filename.lower()
         
         if filename.endswith('.pdf'):
+            print(f"Extraindo texto de PDF: {filename}")
             resume_text = extract_text_from_pdf(content)
         elif filename.endswith('.docx'):
+            print(f"Extraindo texto de DOCX: {filename}")
             resume_text = extract_text_from_docx(content)
         else:
+            print(f"Tentando extrair texto de arquivo desconhecido: {filename}")
             try:
                 resume_text = content.decode('utf-8')
             except:
                 resume_text = extract_text_from_docx(content)
 
+        print(f"Texto extraído (primeiros 100 caracteres): {resume_text[:100]}")
+
         if not resume_text.strip():
+            print("AVISO: Texto extraído está vazio.")
             resume_text = ""
 
         # LÓGICA DE MATCH BASEADA EM QUALIFICAÇÕES (IA)
@@ -109,7 +119,8 @@ async def scan_resume(file: UploadFile = File(...), job_description: str = Form(
                 prompt_extract = f"Extraia apenas as Hard Skills (tecnologias, idiomas, certificações) essenciais desta vaga como uma lista simples de termos separados por vírgula. VAGA: {job_description}"
                 resp_jd = client.models.generate_content(model='gemini-1.5-flash', contents=prompt_extract)
                 jd_requirements = [s.strip().lower() for s in resp_jd.text.split(',')]
-            except:
+            except Exception as ia_err:
+                print(f"Erro IA: {ia_err}")
                 jd_requirements = list(get_keywords(job_description))
         else:
             jd_requirements = list(get_keywords(job_description))
