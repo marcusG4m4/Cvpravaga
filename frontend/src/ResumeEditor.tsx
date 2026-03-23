@@ -235,7 +235,7 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
                       <input 
                         type={field.type} 
                         name={field.name} 
-                        className={`input-style ${isDark ? 'bg-slate-900 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`} 
+                        className={`inp ${isDark ? 'bg-slate-900 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`} 
                         value={(data as any)[field.name]} 
                         onChange={handleInputChange} 
                       />
@@ -254,7 +254,7 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
                   rows={6} 
                   value={data.summary}
                   placeholder="Dica: Use as palavras sugeridas à direita para subir seu score!"
-                  className={`input-style w-full resize-none leading-relaxed ${isDark ? 'bg-slate-900 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`} 
+                  className={`inp w-full resize-none leading-relaxed ${isDark ? 'bg-slate-900 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`} 
                   onChange={handleInputChange} 
                 />
               </section>
@@ -269,17 +269,17 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Cargo</label>
-                        <input type="text" className={`input-style font-bold ${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-gray-200 text-slate-900'}`} value={exp.title} onChange={(e) => handleExperienceChange(i, 'title', e.target.value)} />
+                        <input type="text" className={`inp font-bold ${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-gray-200 text-slate-900'}`} value={exp.title} onChange={(e) => handleExperienceChange(i, 'title', e.target.value)} />
                       </div>
                       <div className="space-y-2">
                         <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Empresa</label>
-                        <input type="text" className={`input-style font-bold ${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-gray-200 text-slate-900'}`} value={exp.company} onChange={(e) => handleExperienceChange(i, 'company', e.target.value)} />
+                        <input type="text" className={`inp font-bold ${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-gray-200 text-slate-900'}`} value={exp.company} onChange={(e) => handleExperienceChange(i, 'company', e.target.value)} />
                       </div>
                     </div>
                     <textarea 
                       rows={5} 
                       value={exp.description}
-                      className={`input-style w-full resize-none leading-relaxed ${isDark ? 'bg-slate-900 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`}
+                      className={`inp w-full resize-none leading-relaxed ${isDark ? 'bg-slate-900 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-gray-200 text-slate-900'}`}
                       onChange={(e) => handleExperienceChange(i, 'description', e.target.value)} 
                     />
                   </div>
@@ -351,7 +351,7 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
       </div>
       
       <style>{`
-        .input-style {
+        .inp {
           border-radius: 1.2rem;
           padding: 16px 24px;
           font-size: 0.95rem;
@@ -360,7 +360,7 @@ export default function ResumeEditor({ initialData, onClose }: ResumeEditorProps
           transition: all 0.2s;
           border-width: 2px;
         }
-        .input-style:focus {
+        .inp:focus {
           border-color: #2563eb;
           box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.1);
         }

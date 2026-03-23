@@ -17,7 +17,7 @@ body {
   color: var(--text-primary);
 }
 
-.container {
+.cnt {
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
@@ -47,7 +47,7 @@ header p {
   font-size: 1.1rem;
 }
 
-.card {
+.crd {
   background: var(--card-bg);
   padding: 1.5rem;
   border-radius: 12px;
@@ -56,7 +56,7 @@ header p {
   margin-bottom: 1.5rem;
 }
 
-.card h3 {
+.crd h3 {
   margin-top: 0;
   margin-bottom: 1rem;
   font-size: 1.2rem;
@@ -66,7 +66,7 @@ header p {
 textarea {
   width: 100%;
   padding: 1rem;
-  border: 1px solid var(--border);
+  /* border: 1px solid var(--border); */
   border-radius: 8px;
   font-family: inherit;
   font-size: 1rem;
@@ -74,13 +74,13 @@ textarea {
   box-sizing: border-box;
 }
 
-.file-input-wrapper {
+.fiw {
   position: relative;
   display: inline-block;
   width: 100%;
 }
 
-.file-input-wrapper input[type="file"] {
+.fiw input[type="file"] {
   position: absolute;
   left: 0;
   top: 0;
@@ -90,7 +90,7 @@ textarea {
   cursor: pointer;
 }
 
-.btn-secondary {
+.btn2 {
   display: block;
   padding: 1rem;
   background: #f1f5f9;
@@ -102,13 +102,13 @@ textarea {
   transition: all 0.2s;
 }
 
-.file-input-wrapper:hover .btn-secondary {
+.fiw:hover .btn2 {
   background: #e2e8f0;
   border-color: var(--primary-color);
   color: var(--primary-color);
 }
 
-.btn-primary {
+.btn1 {
   display: block;
   width: 100%;
   padding: 1rem;
@@ -122,22 +122,22 @@ textarea {
   transition: background-color 0.2s;
 }
 
-.btn-primary:hover {
+.btn1:hover {
   background-color: #1d4ed8;
 }
 
-.btn-primary:disabled {
+.btn1:disabled {
   background-color: #94a3b8;
   cursor: not-allowed;
 }
 
-.error-msg {
+.err {
   color: var(--danger);
   margin-top: 1rem;
   text-align: center;
 }
 
-.result-section {
+.res {
   margin-top: 3rem;
   animation: fadeIn 0.5s ease-out;
 }
@@ -147,12 +147,12 @@ textarea {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.score-card {
+.scrd {
   text-align: center;
   padding: 2rem;
 }
 
-.score-circle {
+.scir {
   width: 150px;
   height: 150px;
   border: 8px solid var(--primary-color);
@@ -164,59 +164,59 @@ textarea {
   margin: 0 auto 1.5rem;
 }
 
-.score-value {
+.sval {
   font-size: 2.5rem;
   font-weight: 800;
   color: var(--primary-color);
 }
 
-.score-label {
+.slab {
   font-size: 0.9rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.filename {
+.fn {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
-.keywords-container {
+.kwc {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
 
-.keyword-card h3 {
+.kwrd h3 {
   font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.missing-title { color: var(--danger); }
-.common-title { color: var(--success); }
+.mtit { color: var(--danger); }
+.ctit { color: var(--success); }
 
-.keyword-list {
+.kwl {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.keyword-item {
+.kwi {
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 500;
 }
 
-.keyword-item.missing {
+.kwi.ms {
   background-color: #fef2f2;
   color: var(--danger);
   border: 1px solid #fecaca;
 }
 
-.keyword-item.matching {
+.kwi.mt {
   background-color: #ecfdf5;
   color: var(--success);
   border: 1px solid #a7f3d0;
@@ -231,7 +231,7 @@ footer {
 }
 
 @media (max-width: 768px) {
-  .keywords-container {
+  .kwc {
     grid-template-columns: 1fr;
   }
 }
